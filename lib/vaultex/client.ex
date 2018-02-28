@@ -46,6 +46,24 @@ defmodule Vaultex.Client do
   end
 
   @doc """
+  Retrieves the token given as result of authentication
+
+  ## Examples
+
+      iex> Vaultex.Client.get_token()
+      {:error, :not_authenticated}
+
+      iex> Vaultex.Client.auth(:app_id, {app_id, user_id})
+      {:ok, :authenticated}
+
+      iex> Vaultex.Client.get_token()
+      "51ad0931-52bc-084e-46e7-b4f8bc9ea35a"
+  """
+  def get_token() do
+    GenServer.call(:vaultex, :get_token)
+  end
+
+  @doc """
   Reads a secret from vault given a path.
 
   ## Parameters
@@ -117,6 +135,16 @@ defmodule Vaultex.Client do
 
   def handle_call({:auth, method, credentials}, _from, state) do
     Auth.handle(method, credentials, state)
+  end
+
+  def handle_call(:get_token, _from, state) do
+    response = 
+      case Map.get(state, :token) do
+        nil -> {:error, :not_authenticated}
+        token -> token
+      end
+
+    {:reply, response, state}  
   end
 
   defp url do
